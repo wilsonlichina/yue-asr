@@ -34,14 +34,26 @@ def prepare_audio_data(audio_file_path):
 
 # 调用Whisper端点进行推理
 def invoke_whisper_endpoint(endpoint_name, audio_data):
+    # 创建包含音频数据和语言参数的请求体
+    # 对于Whisper模型，我们需要指定语言为粤语(Cantonese)
+    # 根据Whisper API，语言代码为'yue'或'zh'，并可能需要额外参数
+    payload = {
+        'audio_input': audio_data.hex(),  # 将二进制音频数据转换为十六进制字符串
+        'language': 'chinese',  # 指定语言为粤语(Cantonese)
+        'temperature': 0.3,
+        'top_p': 0.95,
+        'task': 'transcribe'  # 指定任务为转录
+    }
+    
     response = runtime_client.invoke_endpoint(
         EndpointName=endpoint_name,
-        ContentType='audio/wav',  # 根据您的端点配置可能需要调整
-        Body=audio_data
+        ContentType='application/json',  # 更改为JSON格式
+        Body=json.dumps(payload)
     )
     
     # 解析响应
     result = json.loads(response['Body'].read().decode())
+    print(result)
     return result
 
 
@@ -106,7 +118,7 @@ def main():
     endpoint_name = 'endpoint-asr-whisper-lvt'
     s3_bucket = 'yue-asr-audio-uploads'
     labels_file = 'test_audio_label.csv'
-    output_file = 'result-vs-transcribe.csv'
+    output_file = 'result-whisper-vs-transcribe.csv'
     
     # 加载标签数据
     labels = load_labels(labels_file)
